@@ -1,0 +1,97 @@
+name: CI
+
+on:         
+  push:
+    branches: [ "main" ]  
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+
+        
+    steps:
+        #Клонирую репозиторий в runner
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+        # Подключаю окружение компилятора Microsoft Visual C++
+      - name: Setup MSVC environment (Windows only)
+        if: matrix.os == 'windows-latest'
+        uses: ilammy/msvc-dev-cmd@v1
+
+        #Запуск конфигурации CMake
+      - name: Configure with CMake (Windows)
+        if: matrix.os == 'windows-latest'
+        run: cmake -B build 
+        shell: powershell
+        
+      - name: Configure with CMake (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: cmake -B build
+        shell: bash
+
+        #Сборка
+      - name: Build with CMake (Windows)
+        if: matrix.os == 'windows-latest'
+        run: cmake --build build --config Release
+        shell: powershell
+
+      - name: Build with CMake (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: cmake --build build --config Release
+        shell: bash
+
+        #Тесты
+      - name: Run Tests (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          cd build
+          ctest -C Release --output-on-failure
+        shell: powershell
+
+      - name: Run Tests (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: cd build && ctest --output-on-failure
+        shell: bash
+
+        #Собираю артефакты в одну папку
+      - name: Prepare artifacts (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          mkdir ReadyFiles
+          cp ip_filter.tsv ReadyFiles/
+          cp build/Release/Sortirovka.exe ReadyFiles/
+        shell: powershell
+
+      - name: Prepare artifacts (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          mkdir ReadyFiles
+          cp ip_filter.tsv ReadyFiles/
+          cp build/Sortirovka ReadyFiles/
+        shell: bash
+
+        #Загрузка артефактов на GitHub
+      - name: Upload release artifacts (Windows)
+        if: matrix.os == 'windows-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-Sortirovka-release
+          path: ReadyFiles/ 
+          retention-days: 7
+
+      - name: Upload release artifacts (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-Sortirovka-release
+          path: ReadyFiles/
+          retention-days: 7
