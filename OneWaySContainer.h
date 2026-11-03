@@ -20,6 +20,10 @@ public:
     OneWaySContainer() = default;
 
     ~OneWaySContainer() {
+        clear();
+    }
+
+    void clear() {
         while (head != nullptr) {
             Node* temp = head;
             head = head->next;
