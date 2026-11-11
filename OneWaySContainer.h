@@ -1,6 +1,7 @@
 #pragma once
 
-#include <cstddef>
+#include <utility>
+#include <stdexcept>
 
 template <typename T>
 class OneWaySContainer {
@@ -19,6 +20,20 @@ private:
 public:
     OneWaySContainer() = default;
 
+    OneWaySContainer(const OneWaySContainer& other) 
+        : head(nullptr), tail(nullptr), size_(0) {
+        for (Node* cur = other.head; cur != nullptr; cur = cur->next)
+            push_back(cur->value);       
+    }
+
+    OneWaySContainer(OneWaySContainer&& other) noexcept 
+        : head(other.head), tail(other.tail), size_(other.size_) 
+    {
+        other.head = nullptr;
+        other.tail = nullptr;
+        other.size_ = 0;
+    }
+
     ~OneWaySContainer() {
         clear();
     }
@@ -33,7 +48,36 @@ public:
         size_ = 0;
     }
 
-    std::size_t size() { 
+    OneWaySContainer& operator=(const OneWaySContainer& other) {
+        if (this == &other) return *this;
+        OneWaySContainer tmp(other);
+        swap(tmp);
+        return *this;
+    }
+
+    void swap(OneWaySContainer& other) noexcept {
+        std::swap(head, other.head);
+        std::swap(tail, other.tail);
+        std::swap(size_, other.size_);
+    }
+
+    OneWaySContainer& operator=(OneWaySContainer&& other) noexcept {
+        if (this == &other) return *this;
+
+        clear();
+
+        head = other.head;
+        tail = other.tail;
+        size_ = other.size_;
+
+        other.head = nullptr;
+        other.tail = nullptr;
+        other.size_ = 0;
+
+        return *this;
+    }
+
+    std::size_t size() const { 
         return size_; 
     }
 
@@ -126,10 +170,14 @@ public:
         explicit iterator(Node* n) : node(n) {}
 
         T& operator*() { 
+            if (node == nullptr)
+                throw std::out_of_range("Итератор разыменование end()");
             return node->value; 
         }
     
         iterator& operator++() { 
+            if (node == nullptr)
+                throw std::out_of_range("Итератор за пределами списка");
             node = node->next; 
             return *this; 
         }
@@ -143,11 +191,36 @@ public:
         }
     };
 
-    iterator begin() { 
-        return iterator(head); 
-    }
+    class const_iterator {
+        const Node* node;
+    public:
+        explicit const_iterator(Node* n) : node(n) {}
 
-    iterator end() { 
-        return iterator(nullptr); 
-    }
+        const T& operator*() const { 
+            if (node == nullptr)
+                throw std::out_of_range("const Итератор разыменование end()");
+            return node->value; 
+        }
+    
+        const_iterator& operator++() { 
+            if (node == nullptr)
+                throw std::out_of_range("const Итератор за пределами списка");
+            node = node->next; 
+            return *this; 
+        }
+
+        bool operator!=(const const_iterator& other) { 
+            return node != other.node; 
+        }
+        
+        Node* get_node() { 
+            return node; 
+        }
+    };
+    
+    iterator begin() { return iterator(head); }
+    iterator end() { return iterator(nullptr); }
+    
+    const_iterator begin() const { return const_iterator(head); }
+    const_iterator end()   const { return const_iterator(nullptr); }
 };

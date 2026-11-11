@@ -1,6 +1,7 @@
 #pragma once
 
-#include <cstddef>
+#include <utility>
+#include <stdexcept>
 
 template <typename T>
 class SContainer {
@@ -19,6 +20,12 @@ private:
 
 public:
     SContainer() = default;
+
+    SContainer(const SContainer& other) 
+        : head(nullptr), tail(nullptr), size_(0) {
+        for (Node* cur = other.head; cur != nullptr; cur = cur->next)
+            push_back(cur->value);       
+    }
 
     SContainer(SContainer&& other) noexcept 
         : head(other.head), tail(other.tail), size_(other.size_) 
@@ -42,6 +49,19 @@ public:
         size_ = 0;
     }
 
+    SContainer& operator=(const SContainer& other) {
+        if (this == &other) return *this;
+        SContainer tmp(other);
+        swap(tmp);
+        return *this;
+    }
+
+    void swap(SContainer& other) noexcept {
+        std::swap(head, other.head);
+        std::swap(tail, other.tail);
+        std::swap(size_, other.size_);
+    }
+
     SContainer& operator=(SContainer&& other) noexcept {
         if (this == &other) return *this;
 
@@ -58,7 +78,7 @@ public:
         return *this;
     }
 
-    std::size_t size() { 
+    std::size_t size() const { 
         return size_; 
     }
 
@@ -150,10 +170,14 @@ public:
         explicit iterator(Node* n) : node(n) {}
 
         T& operator*() { 
+            if (node == nullptr)
+                throw std::out_of_range("Итератор разыменование end()");
             return node->value; 
         }
     
         iterator& operator++() { 
+            if (node == nullptr)
+                throw std::out_of_range("Итератор за пределами списка");
             node = node->next; 
             return *this; 
         }
@@ -167,11 +191,36 @@ public:
         }
     };
 
-    iterator begin() { 
-        return iterator(head); 
-    }
+    class const_iterator {
+        const Node* node;
+    public:
+        explicit const_iterator(Node* n) : node(n) {}
 
-    iterator end() { 
-        return iterator(nullptr); 
-    }
+        const T& operator*() const { 
+            if (node == nullptr)
+                throw std::out_of_range("const Итератор разыменование end()");
+            return node->value; 
+        }
+    
+        const_iterator& operator++() { 
+            if (node == nullptr)
+                throw std::out_of_range("const Итератор за пределами списка");
+            node = node->next; 
+            return *this; 
+        }
+
+        bool operator!=(const const_iterator& other) { 
+            return node != other.node; 
+        }
+        
+        Node* get_node() { 
+            return node; 
+        }
+    };
+
+    iterator begin() { return iterator(head); }
+    iterator end() { return iterator(nullptr); }
+    
+    const_iterator begin() const { return const_iterator(head); }
+    const_iterator end()   const { return const_iterator(nullptr); }
 };

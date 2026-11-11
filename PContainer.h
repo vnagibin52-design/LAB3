@@ -1,9 +1,16 @@
 #pragma once
 
-#include <cstddef>
+#include <stdexcept> 
+#include <string>      
 #include <utility>
+#include <concepts>
 
-template <typename T>
+template<typename T>
+concept Storable =
+    std::is_default_constructible_v<T> &&
+    std::is_move_constructible_v<T>;
+
+template <Storable T>
 class PContainer {
 private:
     T* Data = nullptr;
@@ -30,6 +37,57 @@ public:
 
     ~PContainer() { delete[] Data; }
 
+    PContainer(const PContainer& other)
+        : Data(nullptr), size_(other.size_), Maxsize_(other.Maxsize_) 
+    {
+        if (Maxsize_ > 0){
+            Data = new T[Maxsize_];
+            for(std::size_t i = 0; i < size_; i++){
+                Data[i] = other.Data[i];
+            }
+        }
+    }
+
+    PContainer(PContainer&& other) noexcept 
+        : Data(other.Data), size_(other.size_), Maxsize_(other.Maxsize_) 
+    {
+        other.Data = nullptr;
+        other.size_ = 0;
+        other.Maxsize_ = 0;
+    }
+
+    PContainer& operator=(const PContainer& other){
+        if (this == &other) return *this;
+
+        delete[] Data;
+        size_ = other.size_;
+        Maxsize_ = other.Maxsize_;
+
+        if (Maxsize_ > 0){
+            Data = new T[Maxsize_];
+            for (size_t i = 0; i < size_; i++)
+            Data[i] = other.Data[i];
+        } else {
+            Data = nullptr;
+        }
+
+        return *this;
+    }
+
+    PContainer& operator=(PContainer&& other) noexcept {
+        if (this == &other) return *this;
+
+        Data = other.Data;
+        size_ = other.size_;
+        Maxsize_ = other.Maxsize_;
+        
+        other.Data = nullptr;
+        other.size_ = 0;
+        other.Maxsize_ = 0;
+
+        return *this;
+    }
+
     void push_back(const T& value) {
         if (size_ == Maxsize_) expand();
         Data[size_] = value;
@@ -40,6 +98,12 @@ public:
 
         if (size_ == Maxsize_) expand();
 
+        if (position > size_) {
+        throw std::out_of_range(
+            "PContainer::insert: index " + std::to_string(position) +
+            ", допустимо [0, " + std::to_string(size_) + "]");
+        }
+
         for(std::size_t i = size_; i > position; i--){
             Data[i] = std::move(Data[i-1]);
         }
@@ -49,10 +113,16 @@ public:
 
     void erase(std::size_t position) {
 
+        if (position >= size_) {
+        throw std::out_of_range(
+            "PContainer::erase: index " + std::to_string(position) +
+            ", допустимо [0, " + std::to_string(size_) + "]");
+        }
+
         for(std::size_t i = position; i < size_-1; i++){
             Data[i] = std::move(Data[i+1]);
         }
-        Data[size_ - 1].~T();
+        Data[size_ - 1] = T();
         --size_;
     }
 
@@ -60,6 +130,10 @@ public:
         return Data[index];
     }
 
-    std::size_t size() { return size_; }
-    std::size_t capacity() { return Maxsize_; }
+    const T& operator[](std::size_t index) const { 
+        return Data[index]; 
+    }	
+
+    std::size_t size() const { return size_; }
+    std::size_t capacity() const { return Maxsize_; }
 };
