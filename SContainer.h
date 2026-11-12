@@ -53,8 +53,8 @@ public:
 
     SContainer& operator=(const SContainer& other) {
         if (this == &other) return *this;
-        SContainer tmp(other);
-        swap(tmp);
+        SContainer temp(other);
+        swap(temp);
         return *this;
     }
 

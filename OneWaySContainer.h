@@ -52,8 +52,8 @@ public:
 
     OneWaySContainer& operator=(const OneWaySContainer& other) {
         if (this == &other) return *this;
-        OneWaySContainer tmp(other);
-        swap(tmp);
+        OneWaySContainer temp(other);
+        swap(temp);
         return *this;
     }
 
