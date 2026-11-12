@@ -5,11 +5,6 @@
 #include <utility>
 #include <concepts>
 
-template<typename T>
-concept Storable =
-    std::is_default_constructible_v<T> &&
-    std::is_move_constructible_v<T>;
-
 template <Storable T>
 class PContainer {
 private:

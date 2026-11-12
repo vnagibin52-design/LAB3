@@ -1,9 +1,16 @@
 #pragma once
 
+#include <stdexcept> 
+#include <string>      
 #include <utility>
-#include <stdexcept>
+#include <concepts>
 
-template <typename T>
+template<typename T>
+concept Storable =
+    std::is_default_constructible_v<T> &&
+    std::is_move_constructible_v<T>;
+
+template <Storable T>
 class SContainer {
 private:
     struct Node {

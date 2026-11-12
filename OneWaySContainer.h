@@ -1,9 +1,11 @@
 #pragma once
 
+#include <stdexcept> 
+#include <string>      
 #include <utility>
-#include <stdexcept>
+#include <concepts>
 
-template <typename T>
+template <Storable T>
 class OneWaySContainer {
 private:
     struct Node {
