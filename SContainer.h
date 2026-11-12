@@ -3,12 +3,7 @@
 #include <stdexcept> 
 #include <string>      
 #include <utility>
-#include <concepts>
-
-template<typename T>
-concept Storable =
-    std::is_default_constructible_v<T> &&
-    std::is_move_constructible_v<T>;
+#include "Storable.h"
 
 template <Storable T>
 class SContainer {
