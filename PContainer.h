@@ -91,13 +91,13 @@ public:
 
     void insert(std::size_t position, const T& value) {
 
-        if (size_ == Maxsize_) expand();
-
         if (position > size_) {
         throw std::out_of_range(
             "PContainer::insert: index " + std::to_string(position) +
             ", допустимо [0, " + std::to_string(size_) + "]");
         }
+
+        if (size_ == Maxsize_) expand();
 
         for(std::size_t i = size_; i > position; i--){
             Data[i] = std::move(Data[i-1]);
